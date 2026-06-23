@@ -1,61 +1,81 @@
 pipeline {
-  agent any
-  stages {
-    
-    stage('Prepare') {
-      steps {
-        sh """
-          pwd
-          ls -la
-          find . -type d | head -50
-          cd Chapter08/sample1
-          chmod +x gradlew
-        """
-      }
-    }
-    stage('Clean') {
-      steps {
-        sh """
-          cd Chapter08/sample1
-          ./gradlew clean
-        """
-      }
-    }
-    stage('Run Tests') {
-      steps {
-        sh """
-          cd Chapter08/sample1
-          ./gradlew test
-        """
-      }
-    }
-    stage('Code Coverage') {
-      steps {
-        sh """
-          cd Chapter08/sample1
-          ./gradlew jacocoTestCoverageVerification
-        """
-      }
-    }
-    
-stage('Checkstyle') {
-  steps {
-    sh """
-      cd Chapter08/sample1
-      ./gradlew checkstyleMain
-    """
-  }
-  post {
-    always {
-      publishHTML(target: [
-        reportDir: 'Chapter08/sample1/build/reports/checkstyle',
-        reportFiles: 'main.html',
-        reportName: "jacoco checkstyle"
-      ])
-    }
-  }
-}
 
-    
-  }
+    agent {
+        label 'docker-agent'
+    }
+
+    stages {
+
+        stage('Prepare') {
+            steps {
+                sh '''
+                    cd Chapter08/sample1
+                    chmod +x gradlew
+                '''
+            }
+        }
+
+        stage('Clean') {
+            steps {
+                sh '''
+                    cd Chapter08/sample1
+                    ./gradlew clean
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh '''
+                    cd Chapter08/sample1
+                    ./gradlew test
+                '''
+            }
+        }
+
+        stage('Code Coverage') {
+            when {
+                changeset "**/*.java"
+            }
+            steps {
+                sh '''
+                    cd Chapter08/sample1
+                    ./gradlew jacocoTestCoverageVerification
+                '''
+            }
+        }
+
+        stage('Checkstyle') {
+            when {
+                changeset "**/*.java"
+            }
+            steps {
+                sh '''
+                    cd Chapter08/sample1
+                    ./gradlew checkstyleMain
+                '''
+            }
+            post {
+                always {
+                    publishHTML(target: [
+                        reportDir: 'Chapter08/sample1/build/reports/checkstyle',
+                        reportFiles: 'main.html',
+                        reportName: 'Checkstyle Report'
+                    ])
+                }
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo "pipeline ran perfectly"
+        }
+
+        failure {
+            echo "pipeline failure"
+        }
+
+    }
 }
