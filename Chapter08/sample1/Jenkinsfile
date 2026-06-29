@@ -6,14 +6,14 @@ pipeline {
         stage('Branch Validation') {
             steps {
                 script {
-                    if (env.BRANCH_NAME == 'main') {
-                        echo "Main branch detected"
+                    if (env.BRANCH_NAME == 'master') {
+                        echo "Master branch detected"
                     }
                     else if (env.BRANCH_NAME.contains('feature')) {
                         echo "Feature branch detected"
                     }
                     else {
-                        error("Invalid branch name: ${env.BRANCH_NAME}. Only 'main' or branches containing 'feature' are allowed.")
+                        error("Invalid branch name: ${env.BRANCH_NAME}. Only 'master' or branches containing 'feature' are allowed.")
                     }
                 }
             }
@@ -40,7 +40,7 @@ pipeline {
         stage('Run Tests') {
             when {
                 anyOf {
-                    branch 'main'
+                    branch 'master'
                     expression {
                         env.BRANCH_NAME.contains('feature')
                     }
@@ -56,7 +56,7 @@ pipeline {
 
         stage('Code Coverage') {
             when {
-                branch 'main'
+                branch 'master'
             }
             steps {
                 sh '''
@@ -69,7 +69,7 @@ pipeline {
         stage('Checkstyle') {
             when {
                 anyOf {
-                    branch 'main'
+                    branch 'master'
                     expression {
                         env.BRANCH_NAME.contains('feature')
                     }
