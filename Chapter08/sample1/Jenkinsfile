@@ -130,11 +130,13 @@ pipeline {
 
     find build -type d | grep jacoco
 
-    cd Chapter08/sample1
-
     sh gradlew test
 
     ls -R build
+
+    cd Chapter08/sample1
+    
+    sh gradlew tasks --all | grep -i jacoco || true
 '''
 
             publishHTML(target: [
