@@ -3,22 +3,6 @@ pipeline {
 
     stages {
 
-        stage('Branch Validation') {
-            steps {
-                script {
-                    if (env.BRANCH_NAME == 'master') {
-                        echo "Master branch detected"
-                    }
-                    else if (env.BRANCH_NAME.contains('feature')) {
-                        echo "Feature branch detected"
-                    }
-                    else {
-                        error("Invalid branch name: ${env.BRANCH_NAME}. Only 'master' or branches containing 'feature' are allowed.")
-                    }
-                }
-            }
-        }
-
         stage('Prepare') {
             steps {
                 sh '''
