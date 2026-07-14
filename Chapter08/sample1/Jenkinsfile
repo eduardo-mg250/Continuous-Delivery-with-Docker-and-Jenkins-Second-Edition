@@ -1,81 +1,112 @@
 pipeline {
     agent any
+
     stages {
 
         stage('Branch Validation') {
             steps {
                 script {
-                    echo "Current Branch: ${env.BRANCH_NAME}"
+                    if (env.BRANCH_NAME == 'master') {
+                        echo "Master branch detected"
+                    }
+                    else if (env.BRANCH_NAME.contains('feature')) {
+                        echo "Feature branch detected"
+                    }
+                    else {
+                        error("Invalid branch name: ${env.BRANCH_NAME}. Only 'master' or branches containing 'feature' are allowed.")
+                    }
                 }
             }
         }
 
         stage('Prepare') {
             steps {
-
-                sh """
+                sh '''
                     cd Chapter08/sample1
-                    pwd
                     chmod +x gradlew
-                """
+                '''
             }
-
         }
 
         stage('Clean') {
             steps {
-
-                sh """
+                sh '''
                     cd Chapter08/sample1
                     ./gradlew clean
-                """
+                '''
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-            
-                sh """
-                    cd Chapter08/sample1
-                    ./gradlew test
-                """
-            }
-
-        }
-
-        stage('Integration Tests') {
+        stage('Run Tests') {
             when {
-                not {
+                anyOf {
                     branch 'master'
+                    expression {
+                        env.BRANCH_NAME.contains('feature')
+                    }
                 }
             }
 
             steps {
-            
-
-                sh """
+                sh '''
                     cd Chapter08/sample1
-                    ./gradlew integrationTest
-                """
+                    ./gradlew test
+                '''
+            }
+
+            post {
+
+                success {
+                    echo "tests pass!"
+                }
+
+                failure {
+                    echo "tests fail!"
+                }
+
+                always {
+                    sh '''
+                        cd Chapter08/sample1
+                        ./gradlew jacocoTestReport || true
+                    '''
+                }
+            }
+        }
+
+        stage('Code Coverage') {
+
+            when {
+                branch 'master'
+            }
+
+            steps {
+                sh '''
+                    cd Chapter08/sample1
+                    ./gradlew jacocoTestCoverageVerification
+                '''
             }
         }
 
         stage('Checkstyle') {
+
             when {
-                not {
+                anyOf {
                     branch 'master'
+
+                    expression {
+                        env.BRANCH_NAME.contains('feature')
+                    }
                 }
             }
 
             steps {
-                sh """
+                sh '''
                     cd Chapter08/sample1
                     ./gradlew checkstyleMain
-                """
+                '''
             }
 
             post {
-                
                 always {
                     publishHTML(target: [
                         reportDir: 'Chapter08/sample1/build/reports/checkstyle',
@@ -85,47 +116,27 @@ pipeline {
                 }
             }
         }
-
-        stage('Code Coverage') {
-            when {
-                branch 'master'
-            }
-
-            steps {
-            
-                sh """
-                    cd Chapter08/sample1
-                    ./gradlew jacocoTestCoverageVerification
-                """
-            }
-
-        }
     }
 
     post {
 
-        always {
+        success {
+            echo "Pipeline completed successfully."
+        }
 
-            sh """
-                cd Chapter08/sample1
-                ./gradlew jacocoTestReport || true
-            """
+        failure {
+            echo "Pipeline failed."
+        }
+
+        always {
 
             publishHTML(target: [
                 reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
                 reportFiles: 'index.html',
-                reportName: 'JaCoCo Report'
+                reportName: 'Jacoco Report'
             ])
 
             echo "Branch: ${env.BRANCH_NAME}"
-        }
-
-        success {
-            echo "tests pass!"
-        }
-
-        failure {
-            echo "tests fail!"
         }
     }
 }
