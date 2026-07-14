@@ -1,87 +1,130 @@
 pipeline {
     agent any
 
+    environment {
+        PROJECT_DIR = 'Chapter08/sample1'
+    }
+
     stages {
 
         stage('Branch Validation') {
             steps {
                 script {
-                    if (env.BRANCH_NAME == 'master') {
-                        echo "Master branch detected"
-                    }
-                    else if (env.BRANCH_NAME.contains('feature')) {
-                        echo "Feature branch detected"
-                    }
-                    else {
-                        error("Invalid branch name: ${env.BRANCH_NAME}. Only 'master' or branches containing 'feature' are allowed.")
-                    }
+                    echo "Current Branch: ${env.BRANCH_NAME}"
                 }
             }
         }
 
         stage('Prepare') {
             steps {
-                sh '''
-                    cd Chapter08/sample1
+                githubNotify context: 'Prepare', status: 'PENDING'
+
+                sh """
+                    cd ${PROJECT_DIR}
                     chmod +x gradlew
-                '''
+                """
+            }
+
+            post {
+                success {
+                    githubNotify context: 'Prepare', status: 'SUCCESS'
+                }
+                failure {
+                    githubNotify context: 'Prepare', status: 'FAILURE'
+                }
             }
         }
 
         stage('Clean') {
             steps {
-                sh '''
-                    cd Chapter08/sample1
-                    ./gradlew clean
-                '''
-            }
-        }
+                githubNotify context: 'Clean', status: 'PENDING'
 
-        stage('Run Tests') {
-            when {
-                anyOf {
-                    branch 'master'
-                    expression {
-                        env.BRANCH_NAME.contains('feature')
-                    }
+                sh """
+                    cd ${PROJECT_DIR}
+                    ./gradlew clean
+                """
+            }
+
+            post {
+                success {
+                    githubNotify context: 'Clean', status: 'SUCCESS'
+                }
+                failure {
+                    githubNotify context: 'Clean', status: 'FAILURE'
                 }
             }
+        }
+
+        stage('Unit Tests') {
             steps {
-                sh '''
-                    cd Chapter08/sample1
+                githubNotify context: 'Unit Tests', status: 'PENDING'
+
+                sh """
+                    cd ${PROJECT_DIR}
                     ./gradlew test
-                '''
+                """
+            }
+
+            post {
+                success {
+                    githubNotify context: 'Unit Tests', status: 'SUCCESS'
+                }
+                failure {
+                    githubNotify context: 'Unit Tests', status: 'FAILURE'
+                }
             }
         }
 
-        stage('Code Coverage') {
+        stage('Integration Tests') {
             when {
-                branch 'master'
+                not {
+                    branch 'master'
+                }
             }
+
             steps {
-                sh '''
-                    cd Chapter08/sample1
-                    ./gradlew jacocoTestCoverageVerification
-                '''
+                githubNotify context: 'Integration Tests', status: 'PENDING'
+
+                sh """
+                    cd ${PROJECT_DIR}
+                    ./gradlew integrationTest
+                """
+            }
+
+            post {
+                success {
+                    githubNotify context: 'Integration Tests', status: 'SUCCESS'
+                }
+                failure {
+                    githubNotify context: 'Integration Tests', status: 'FAILURE'
+                }
             }
         }
 
         stage('Checkstyle') {
             when {
-                anyOf {
+                not {
                     branch 'master'
-                    expression {
-                        env.BRANCH_NAME.contains('feature')
-                    }
                 }
             }
+
             steps {
-                sh '''
-                    cd Chapter08/sample1
+                githubNotify context: 'Checkstyle', status: 'PENDING'
+
+                sh """
+                    cd ${PROJECT_DIR}
                     ./gradlew checkstyleMain
-                '''
+                """
             }
+
             post {
+                success {
+                    githubNotify context: 'Checkstyle', status: 'SUCCESS'
+                }
+                failure {
+                    githubNotify context: 'Checkstyle', status: 'FAILURE'
+                }
+
                 always {
                     publishHTML(target: [
                         reportDir: 'Chapter08/sample1/build/reports/checkstyle',
@@ -91,19 +134,56 @@ pipeline {
                 }
             }
         }
+
+        stage('Code Coverage') {
+            when {
+                branch 'master'
+            }
+
+            steps {
+                githubNotify context: 'Code Coverage', status: 'PENDING'
+
+                sh """
+                    cd ${PROJECT_DIR}
+                    ./gradlew jacocoTestCoverageVerification
+                """
+            }
+
+            post {
+                success {
+                    githubNotify context: 'Code Coverage', status: 'SUCCESS'
+                }
+                failure {
+                    githubNotify context: 'Code Coverage', status: 'FAILURE'
+                }
+            }
+        }
     }
 
     post {
+
+        always {
+
+            sh """
+                cd ${PROJECT_DIR}
+                ./gradlew jacocoTestReport || true
+            """
+
+            publishHTML(target: [
+                reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
+                reportFiles: 'index.html',
+                reportName: 'JaCoCo Report'
+            ])
+
+            echo "Branch: ${env.BRANCH_NAME}"
+        }
+
         success {
-            echo "Pipeline completed successfully."
+            echo "tests pass!"
         }
 
         failure {
-            echo "Pipeline failed."
-        }
-
-        always {
-            echo "Branch: ${env.BRANCH_NAME}"
+            echo "tests fail!"
         }
     }
 }
