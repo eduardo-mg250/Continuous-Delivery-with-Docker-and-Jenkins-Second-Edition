@@ -17,7 +17,6 @@ pipeline {
 
         stage('Prepare') {
             steps {
-                githubNotify context: 'Prepare', status: 'PENDING'
 
                 sh """
                     cd ${PROJECT_DIR}
@@ -25,54 +24,27 @@ pipeline {
                 """
             }
 
-            post {
-                success {
-                    githubNotify context: 'Prepare', status: 'SUCCESS'
-                }
-                failure {
-                    githubNotify context: 'Prepare', status: 'FAILURE'
-                }
-            }
         }
 
         stage('Clean') {
             steps {
-                githubNotify context: 'Clean', status: 'PENDING'
 
                 sh """
                     cd ${PROJECT_DIR}
                     ./gradlew clean
                 """
             }
-
-            post {
-                success {
-                    githubNotify context: 'Clean', status: 'SUCCESS'
-                }
-                failure {
-                    githubNotify context: 'Clean', status: 'FAILURE'
-                }
-            }
         }
 
         stage('Unit Tests') {
             steps {
-                githubNotify context: 'Unit Tests', status: 'PENDING'
-
+            
                 sh """
                     cd ${PROJECT_DIR}
                     ./gradlew test
                 """
             }
 
-            post {
-                success {
-                    githubNotify context: 'Unit Tests', status: 'SUCCESS'
-                }
-                failure {
-                    githubNotify context: 'Unit Tests', status: 'FAILURE'
-                }
-            }
         }
 
         stage('Integration Tests') {
@@ -83,21 +55,12 @@ pipeline {
             }
 
             steps {
-                githubNotify context: 'Integration Tests', status: 'PENDING'
+            
 
                 sh """
                     cd ${PROJECT_DIR}
                     ./gradlew integrationTest
                 """
-            }
-
-            post {
-                success {
-                    githubNotify context: 'Integration Tests', status: 'SUCCESS'
-                }
-                failure {
-                    githubNotify context: 'Integration Tests', status: 'FAILURE'
-                }
             }
         }
 
@@ -109,8 +72,6 @@ pipeline {
             }
 
             steps {
-                githubNotify context: 'Checkstyle', status: 'PENDING'
-
                 sh """
                     cd ${PROJECT_DIR}
                     ./gradlew checkstyleMain
@@ -118,13 +79,7 @@ pipeline {
             }
 
             post {
-                success {
-                    githubNotify context: 'Checkstyle', status: 'SUCCESS'
-                }
-                failure {
-                    githubNotify context: 'Checkstyle', status: 'FAILURE'
-                }
-
+                
                 always {
                     publishHTML(target: [
                         reportDir: 'Chapter08/sample1/build/reports/checkstyle',
@@ -141,22 +96,13 @@ pipeline {
             }
 
             steps {
-                githubNotify context: 'Code Coverage', status: 'PENDING'
-
+            
                 sh """
                     cd ${PROJECT_DIR}
                     ./gradlew jacocoTestCoverageVerification
                 """
             }
 
-            post {
-                success {
-                    githubNotify context: 'Code Coverage', status: 'SUCCESS'
-                }
-                failure {
-                    githubNotify context: 'Code Coverage', status: 'FAILURE'
-                }
-            }
         }
     }
 
