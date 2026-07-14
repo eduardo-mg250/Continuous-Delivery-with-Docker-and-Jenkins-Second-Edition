@@ -6,6 +6,18 @@ agent {
 
     stages {
 
+        stage('Agent Verification') {
+    steps {
+        sh '''
+            whoami
+            hostname
+            java -version
+            gradle --version
+            pwd
+        '''
+    }
+}
+
         stage('Prepare') {
             steps {
                 sh '''
