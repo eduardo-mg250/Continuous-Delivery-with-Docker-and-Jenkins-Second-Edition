@@ -1,9 +1,5 @@
 pipeline {
     
-agent {
-    label 'gradle'
-}
-
     stages {
 
         stage('Agent Verification') {
