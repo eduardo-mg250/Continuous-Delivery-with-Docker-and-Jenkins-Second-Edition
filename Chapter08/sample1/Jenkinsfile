@@ -121,31 +121,28 @@ pipeline {
         }
 
         always {
-            sh '''
-    cd Chapter08/sample1
 
-    echo "Looking for reports..."
+        sh '''
+            cd Chapter08/sample1
 
-    find build -name index.html
+            sh gradlew jacocoTestReport || true
 
-    find build -type d | grep jacoco
+            find build -type d | grep jacoco || true
+        '''
 
-    sh gradlew test
+        script {
+            if (fileExists('Chapter08/sample1/build/reports/jacoco/test/html/index.html')) {
 
-    ls -R build
+                publishHTML(target: [
+                    reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
+                    reportFiles: 'index.html',
+                    reportName: 'Jacoco Report'
+                ])
 
-    cd Chapter08/sample1
-    
-    sh gradlew tasks --all | grep -i jacoco || true
-'''
-
-            publishHTML(target: [
-                reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
-                reportFiles: 'index.html',
-                reportName: 'Jacoco Report'
-            ])
-
-            echo "Branch: ${env.BRANCH_NAME}"
+            } else {
+                echo "Jacoco report was not generated."
+            }
         }
+    }
     }
 }
