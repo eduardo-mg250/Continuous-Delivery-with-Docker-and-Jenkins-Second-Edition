@@ -2,30 +2,8 @@ pipeline {
     agent {
         label 'gradle'
     }
+
     stages {
-
-        stage('Agent Info') {
-    steps {
-        sh '''
-            cat /etc/os-release || true
-            hostname
-            whoami
-            gradle --version || true
-        '''
-    }
-}
-
-        stage('Agent Verification') {
-    steps {
-        sh '''
-            whoami
-            hostname
-            java -version
-            gradle --version
-            pwd
-        '''
-    }
-}
 
         stage('Prepare') {
             steps {
@@ -36,53 +14,43 @@ pipeline {
             }
         }
 
-       stage('Clean') {
-    steps {
-        sh '''
-            cd Chapter08/sample1
-            pwd
-            ls -l
-            chmod +x gradlew
-            ls -l gradlew
-            sh gradlew clean
-        '''
-    }
-}
-
-        stage('Run Tests') {
-            when {
-                anyOf {
-                    branch 'master'
-                    expression {
-                        env.BRANCH_NAME.contains('feature')
-                    }
-                }
-            }
-
+        stage('Clean') {
             steps {
                 sh '''
                     cd Chapter08/sample1
-                    chmod +x gradlew
-                    sh gradlew test
+                    sh gradlew clean
                 '''
             }
+        }
 
-            post {
+        stage('Run Tests') {
 
-                success {
-                    echo "tests pass!"
-                }
+            steps {
+                script {
+                    try {
 
-                failure {
-                    echo "tests fail!"
-                }
+                        sh '''
+                            cd Chapter08/sample1
+                            sh gradlew test
+                        '''
 
-                always {
-                    sh '''
-                        cd Chapter08/sample1
-                        chmod +x gradlew
-                        sh gradlew jacocoTestReport || true
-                    '''
+                        echo "tests pass!"
+
+                    } catch (Exception e) {
+
+                        echo "tests fail!"
+                        throw e
+
+                    } finally {
+
+                        sh '''
+                            cd Chapter08/sample1
+
+                            sh gradlew jacocoTestReport || true
+
+                            find build -name index.html || true
+                        '''
+                    }
                 }
             }
         }
@@ -96,7 +64,6 @@ pipeline {
             steps {
                 sh '''
                     cd Chapter08/sample1
-                    chmod +x gradlew
                     sh gradlew jacocoTestCoverageVerification
                 '''
             }
@@ -104,20 +71,9 @@ pipeline {
 
         stage('Checkstyle') {
 
-            when {
-                anyOf {
-                    branch 'master'
-
-                    expression {
-                        env.BRANCH_NAME.contains('feature')
-                    }
-                }
-            }
-
             steps {
                 sh '''
                     cd Chapter08/sample1
-                    chmod +x gradlew
                     sh gradlew checkstyleMain
                 '''
             }
@@ -127,7 +83,10 @@ pipeline {
                     publishHTML(target: [
                         reportDir: 'Chapter08/sample1/build/reports/checkstyle',
                         reportFiles: 'main.html',
-                        reportName: 'Checkstyle Report'
+                        reportName: 'Checkstyle Report',
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true
                     ])
                 }
             }
@@ -145,21 +104,27 @@ pipeline {
         }
 
         always {
-            sh """
-                cd Chapter08/sample1
-                sh gradlew jacocoTestReport --info
-                sh gradlew tasks --all | grep -i jacoco
-                
-            """
 
-            publishHTML(target: [
-                reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
-                reportFiles: 'index.html',
-                reportName: 'JaCoCo Report'
-            ])
+            script {
+
+                if (fileExists('Chapter08/sample1/build/reports/jacoco/test/html/index.html')) {
+
+                    publishHTML(target: [
+                        reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
+                        reportFiles: 'index.html',
+                        reportName: 'JaCoCo Report',
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true
+                    ])
+
+                } else {
+
+                    echo "JaCoCo report was not generated."
+                }
+            }
 
             echo "Branch: ${env.BRANCH_NAME}"
-
         }
     }
 }
