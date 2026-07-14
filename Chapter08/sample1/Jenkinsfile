@@ -39,7 +39,7 @@ pipeline {
                 sh '''
                     cd Chapter08/sample1
                     chmod +x gradlew
-                    ./gradlew test
+                    sh gradlew test
                 '''
             }
 
@@ -57,7 +57,7 @@ pipeline {
                     sh '''
                         cd Chapter08/sample1
                         chmod +x gradlew
-                        ./gradlew jacocoTestReport || true
+                        sh gradlew jacocoTestReport || true
                     '''
                 }
             }
@@ -73,7 +73,7 @@ pipeline {
                 sh '''
                     cd Chapter08/sample1
                     chmod +x gradlew
-                    ./gradlew jacocoTestCoverageVerification
+                    sh gradlew jacocoTestCoverageVerification
                 '''
             }
         }
@@ -94,7 +94,7 @@ pipeline {
                 sh '''
                     cd Chapter08/sample1
                     chmod +x gradlew
-                    ./gradlew checkstyleMain
+                    sh gradlew checkstyleMain
                 '''
             }
 
