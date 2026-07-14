@@ -121,30 +121,19 @@ pipeline {
         }
 
         always {
+            sh """
+                cd Chapter08/sample1
+                sh gradlew jacocoTestReport || true
+            """
 
-        sh '''
-            cd Chapter08/sample1
+            publishHTML(target: [
+                reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
+                reportFiles: 'index.html',
+                reportName: 'JaCoCo Report'
+            ])
 
-            sh gradlew jacocoTestReport || true
+            echo "Branch: ${env.BRANCH_NAME}"
 
-            find build -type d | grep jacoco || true
-
-            pwd
-        '''
-
-        script {
-            if (fileExists('Chapter08/sample1/build/reports/jacoco/test/html/index.html')) {
-
-                publishHTML(target: [
-                    reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
-                    reportFiles: 'index.html',
-                    reportName: 'Jacoco Report'
-                ])
-
-            } else {
-                echo "Jacoco report was not generated."
-            }
         }
-    }
     }
 }
