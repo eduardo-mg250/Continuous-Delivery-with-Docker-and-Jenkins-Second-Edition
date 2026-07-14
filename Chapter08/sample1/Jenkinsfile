@@ -20,7 +20,7 @@ pipeline {
             ls -l
             chmod +x gradlew
             ls -l gradlew
-            ./gradlew clean
+            sh gradlew clean
         '''
     }
 }
