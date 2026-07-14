@@ -1,10 +1,5 @@
 pipeline {
     agent any
-
-    environment {
-        PROJECT_DIR = 'Chapter08/sample1'
-    }
-
     stages {
 
         stage('Branch Validation') {
@@ -19,7 +14,8 @@ pipeline {
             steps {
 
                 sh """
-                    cd ${PROJECT_DIR}
+                    cd Chapter08/sample1
+                    pwd
                     chmod +x gradlew
                 """
             }
@@ -30,7 +26,7 @@ pipeline {
             steps {
 
                 sh """
-                    cd ${PROJECT_DIR}
+                    cd Chapter08/sample1
                     ./gradlew clean
                 """
             }
@@ -40,7 +36,7 @@ pipeline {
             steps {
             
                 sh """
-                    cd ${PROJECT_DIR}
+                    cd Chapter08/sample1
                     ./gradlew test
                 """
             }
@@ -58,7 +54,7 @@ pipeline {
             
 
                 sh """
-                    cd ${PROJECT_DIR}
+                    cd Chapter08/sample1
                     ./gradlew integrationTest
                 """
             }
@@ -73,7 +69,7 @@ pipeline {
 
             steps {
                 sh """
-                    cd ${PROJECT_DIR}
+                    cd Chapter08/sample1
                     ./gradlew checkstyleMain
                 """
             }
@@ -98,7 +94,7 @@ pipeline {
             steps {
             
                 sh """
-                    cd ${PROJECT_DIR}
+                    cd Chapter08/sample1
                     ./gradlew jacocoTestCoverageVerification
                 """
             }
@@ -111,7 +107,7 @@ pipeline {
         always {
 
             sh """
-                cd ${PROJECT_DIR}
+                cd Chapter08/sample1
                 ./gradlew jacocoTestReport || true
             """
 
