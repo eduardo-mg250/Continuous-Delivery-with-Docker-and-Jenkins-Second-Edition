@@ -148,6 +148,19 @@ pipeline {
             sh """
                 cd Chapter08/sample1
                 sh gradlew jacocoTestReport || true
+
+echo "=== Jacoco directories ==="
+
+find build -type d | grep jacoco || true
+
+echo "=== HTML files ==="
+
+find build -name "*.html" || true
+
+echo "=== Index files ==="
+
+find build -name "index.html" || true
+                
             """
 
             publishHTML(target: [
