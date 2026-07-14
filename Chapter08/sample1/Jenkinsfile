@@ -2,6 +2,17 @@ pipeline {
     agent any
     stages {
 
+        stage('Agent Info') {
+    steps {
+        sh '''
+            cat /etc/os-release || true
+            hostname
+            whoami
+            gradle --version || true
+        '''
+    }
+}
+
         stage('Agent Verification') {
     steps {
         sh '''
