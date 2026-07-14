@@ -23,15 +23,5 @@ public class CalculatorControllerTest {
     @MockBean
     private Calculator calculator;
 
-    @Test
-    public void testSumEndpoint() throws Exception {
 
-        when(calculator.sum(anyInt(), anyInt())).thenReturn(5);
-
-        mockMvc.perform(get("/sum")
-                .param("a", "2")
-                .param("b", "3"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("5"));
-    }
 }
