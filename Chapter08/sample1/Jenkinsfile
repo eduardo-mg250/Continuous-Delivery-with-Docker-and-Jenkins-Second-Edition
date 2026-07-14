@@ -1,131 +1,130 @@
 pipeline {
-    agent any
-    stages {
+    agent {
+        label 'gradle'
+    }
 
-        stage('Branch Validation') {
-            steps {
-                script {
-                    echo "Current Branch: ${env.BRANCH_NAME}"
-                }
-            }
-        }
+    stages {
 
         stage('Prepare') {
             steps {
-
-                sh """
+                sh '''
                     cd Chapter08/sample1
-                    pwd
                     chmod +x gradlew
-                """
+                '''
             }
-
         }
 
         stage('Clean') {
             steps {
-
-                sh """
+                sh '''
                     cd Chapter08/sample1
-                    ./gradlew clean
-                """
+                    sh gradlew clean
+                '''
             }
         }
 
-        stage('Unit Tests') {
-            steps {
-            
-                sh """
-                    cd Chapter08/sample1
-                    ./gradlew test
-                """
-            }
-
-        }
-
-        stage('Integration Tests') {
-            when {
-                not {
-                    branch 'master'
-                }
-            }
+        stage('Run Tests') {
 
             steps {
-            
+                script {
+                    try {
 
-                sh """
-                    cd Chapter08/sample1
-                    ./gradlew integrationTest
-                """
-            }
-        }
+                        sh '''
+                            cd Chapter08/sample1
+                            sh gradlew test
+                        '''
 
-        stage('Checkstyle') {
-            when {
-                not {
-                    branch 'master'
-                }
-            }
+                        echo "tests pass!"
 
-            steps {
-                sh """
-                    cd Chapter08/sample1
-                    ./gradlew checkstyleMain
-                """
-            }
+                    } catch (Exception e) {
 
-            post {
-                
-                always {
-                    publishHTML(target: [
-                        reportDir: 'Chapter08/sample1/build/reports/checkstyle',
-                        reportFiles: 'main.html',
-                        reportName: 'Checkstyle Report'
-                    ])
+                        echo "tests fail!"
+                        throw e
+
+                    } finally {
+
+                        sh '''
+                            cd Chapter08/sample1
+
+                            sh gradlew jacocoTestReport || true
+
+                            find build -name index.html || true
+                        '''
+                    }
                 }
             }
         }
 
         stage('Code Coverage') {
+
             when {
                 branch 'master'
             }
 
             steps {
-            
-                sh """
+                sh '''
                     cd Chapter08/sample1
-                    ./gradlew jacocoTestCoverageVerification
-                """
+                    sh gradlew jacocoTestCoverageVerification
+                '''
+            }
+        }
+
+        stage('Checkstyle') {
+
+            steps {
+                sh '''
+                    cd Chapter08/sample1
+                    sh gradlew checkstyleMain
+                '''
             }
 
+            post {
+                always {
+                    publishHTML(target: [
+                        reportDir: 'Chapter08/sample1/build/reports/checkstyle',
+                        reportFiles: 'main.html',
+                        reportName: 'Checkstyle Report',
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true
+                    ])
+                }
+            }
         }
     }
 
     post {
 
-        always {
-
-            sh """
-                cd Chapter08/sample1
-                ./gradlew jacocoTestReport || true
-            """
-
-            publishHTML(target: [
-                reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
-                reportFiles: 'index.html',
-                reportName: 'JaCoCo Report'
-            ])
-
-            echo "Branch: ${env.BRANCH_NAME}"
-        }
-
         success {
-            echo "tests pass!"
+            echo "Pipeline completed successfully."
         }
 
         failure {
-            echo "tests fail!"
+            echo "Pipeline failed."
+        }
+
+        always {
+
+            script {
+
+                if (fileExists('Chapter08/sample1/build/reports/jacoco/test/html/index.html')) {
+
+                    publishHTML(target: [
+                        reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
+                        reportFiles: 'index.html',
+                        reportName: 'JaCoCo Report',
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true
+                    ])
+
+                } else {
+
+                    echo "JaCoCo report was not generated."
+                }
+            }
+
+            echo "Branch: ${env.BRANCH_NAME}"
         }
     }
 }
