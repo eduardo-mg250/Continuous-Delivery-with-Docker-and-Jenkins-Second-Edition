@@ -121,6 +121,15 @@ pipeline {
         }
 
         always {
+            sh '''
+    cd Chapter08/sample1
+
+    echo "Looking for reports..."
+
+    find build -name index.html
+
+    find build -type d | grep jacoco
+'''
 
             publishHTML(target: [
                 reportDir: 'Chapter08/sample1/build/reports/jacoco/test/html',
